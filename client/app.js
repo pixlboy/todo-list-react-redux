@@ -84,12 +84,36 @@ const getVisibleTodos = (todos, filter) => {
                 t => t.completed
             );
     }
-}
+};
 
+//Action Creators
+//For better maintainability
 let nextTodoId = 0;
+const addTodo = (text) => {
+    return {
+        type: 'ADD_TODO',           //This will cause the state change
+        id: nextTodoId++,
+        text: text
+    };
+};
+
+const toggleTodo = (id) => {
+    return {
+        type: 'TOGGLE_TODO',           //This will cause the state change
+        id
+    };
+};
+
+const setVisibilityFilter = (filter) => {
+    return {
+        type: 'SET_VISIBILITY_FILTER',           //This will cause the state change
+        filter: filter
+    };
+};
+
 //Presentational Component & Container component - Functional Component
 //Context {store} is default 2nd argument, props is 1st
-const AddTodo = (props, {store}) => {
+let AddTodo = ({ dispatch }) => {
     let input;
     return(
         <div>
@@ -97,11 +121,7 @@ const AddTodo = (props, {store}) => {
                 input = node
             } />
             <button onClick={() => {
-                store.dispatch({
-                    type: 'ADD_TODO',           //This will cause the state change
-                    id: nextTodoId++,
-                    text : input.value
-                })
+                dispatch(addTodo(input.value));
                 input.value = '';
             }}>
                 Add Todo
@@ -110,10 +130,10 @@ const AddTodo = (props, {store}) => {
     );
 };
 
-//Its necessary to pass the context type to match the context key {store}
-AddTodo.contextTypes = {
-    store: React.PropTypes.object
-}
+//Does not require any props, dispatch is passed as 2nd argument by default
+//{connect} does not need to subscribe to store
+//Second {connect} call (AddTodo) generates a combined container component
+AddTodo = connect()(AddTodo);
 
 //Presentational Component
 //ES6 Destructruing in arguments list -> {props} = {onClick, completed, text}
@@ -143,7 +163,10 @@ const TodoList = ({todos, onTodoClick}) => {
     )
 };
 
-const mapStateToProps = (state) => {
+//Input - state of {store}
+//Returns - props that need to be passed to presentational child components
+//Props are returned anytime the {state} changes
+const mapStateToPropsTodo = (state) => {
     return {
         todos: getVisibleTodos(
             state.todos,
@@ -152,16 +175,24 @@ const mapStateToProps = (state) => {
     };
 };
 
-const mapDispatchToProps = (state) => {
+//Input - dispatch method from {store}
+//Returns - props that need to be passed to presentational child components
+const mapDispatchToPropsTodo = (dispatch) => {
     return {
         onTodoClick: (id) => {
-            store.dispatch({
-                type: 'TOGGLE_TODO',           //This will cause the state change
-                id
-            });
+            dispatch(toggleTodo(id));
         }
     };
 }
+
+//{connect} creates a container component
+//{connect} calculates and merges the objects, creates bindings
+//{mapStateToProps}, {mapDispatchToProps} together describe a container component
+//Called twice because its a curried Function
+const VisibleTodoList = connect(
+    mapStateToPropsTodo,
+    mapDispatchToPropsTodo
+)(TodoList);
 
 //Presentational component
 //Chilren prop is passed by default - in this case it is text inside the link
@@ -181,47 +212,31 @@ const Link = ({active, children, onClick}) => {
     )
 };
 
-//Container component - provides data and controls the behaviour of presentational component
-class FilterLink extends React.Component{
-    componentDidMount() {
-        const {store} = this.context;   //receives the context passed through Provider
-        this.unsubscribe = store.subscribe(() =>
-            this.forceUpdate()
-        );
-    }
+//Input - state of {store}
+//Input - {ownProps} is passed as second parameter (SHOW_ALL, SHOW_ACTIVE, SHOW_COMPLETED)
+//Returns - props that need to be passed to presentational child components
+//Props are returned anytime the {state} changes
+const mapStateToPropsLink = (state, ownProps) => {
+    return {
+        active: ownProps.filter === state.visibilityFilter
+    };
+};
 
-    componentWillMUnmount() {
-        this.unsubscribe();
-    }
+//Input - dispatch method from {store}
+//Input - {ownProps} is passed as second parameter, container component own props
+//Returns - generated props that need to be passed to presentational child components
+const mapDispatchToPropsLink = (dispatch, ownProps) => {
+    return {
+        onClick: () => {
+            dispatch(setVisibilityFilter(ownProps.filter));
+        }
+    };
+};
 
-    //Render method will be invoked everytime the state/store changes
-    render(){
-        const props = this.props;
-        const {store} = this.context;   //receives the context passed through Provider
-        const state = store.getState();
-
-        return(
-            <Link
-                active = {
-                    props.filter === state.visibilityFilter
-                }
-                onClick = {() =>
-                    store.dispatch({
-                        type: 'SET_VISIBILITY_FILTER',           //This will cause the state change
-                        filter: props.filter
-                    })
-                }
-            >
-                {props.children}
-            </Link>
-        );
-    }
-}
-
-//Its necessary to pass the context type to match the context key {store}
-FilterLink.contextTypes = {
-    store: React.PropTypes.object
-}
+const FilterLink = connect(
+    mapStateToPropsLink,
+    mapDispatchToPropsLink
+)(Link);
 
 //Presentational Component - no logic involved
 const Footer = () => {
@@ -250,14 +265,6 @@ const Footer = () => {
     );
 };
 
-//Connect creates a container component
-//Merges the objects and creates bindings
-//Called twice because its a curried Function
-const VisibleTodoList = connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(TodoList);
-
 //Parent App container {TodoApp} - calls intermediate components {AddTodo, VisibleTodoList, Footer}
 //reduces the complexity caused by passing data around the components through props
 const TodoApp = () => (
@@ -279,7 +286,8 @@ ReactDOM.render(
     document.getElementById('root')
 );
 
-//Renders whatever is passed to it {TodoApp} Component
+// Redux provides {Provider} natively, so below code is ommitted
+
 // class Provider extends React.Component {
 //     getChildContext() {
 //         return {
@@ -292,7 +300,48 @@ ReactDOM.render(
 //     }
 // }
 
-//Its necessary to pass the context type to match the context key {store}
 // Provider.childContextTypes = {
+//     store: React.PropTypes.object
+// }
+
+// Redux provides {connect} natively, so below code is ommitted
+
+// class FilterLink extends React.Component{
+//     componentDidMount() {
+//         const {store} = this.context;   //receives the context passed through Provider
+//         this.unsubscribe = store.subscribe(() =>
+//             this.forceUpdate()
+//         );
+//     }
+//
+//     componentWillMUnmount() {
+//         this.unsubscribe();
+//     }
+//
+
+//     render(){
+//         const props = this.props;
+//         const {store} = this.context;   //receives the context passed through Provider
+//         const state = store.getState();
+//
+//         return(
+//             <Link
+//                 active = {
+//                     props.filter === state.visibilityFilter
+//                 }
+//                 onClick = {() =>
+//                     store.dispatch({
+//                         type: 'SET_VISIBILITY_FILTER',           //This will cause the state change
+//                         filter: props.filter
+//                     })
+//                 }
+//             >
+//                 {props.children}
+//             </Link>
+//         );
+//     }
+// }
+
+// FilterLink.contextTypes = {
 //     store: React.PropTypes.object
 // }
