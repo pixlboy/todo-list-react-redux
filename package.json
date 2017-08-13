@@ -1,0 +1,46 @@
+{
+  "name": "react-redux-todo",
+  "version": "1.0.0",
+  "description": "React Redux TODO",
+  "main": "app.js",
+  "scripts": {
+    "dev": "webpack -d",
+    "prod": "webpack -p",
+    "start": "webpack-dev-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "todo",
+    "list",
+    "react",
+    "redux"
+  ],
+  "author": "Rachit Garg",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.9.1",
+    "babel-loader": "^6.2.4",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-polyfill": "^6.13.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-react": "^6.5.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "file-loader": "^0.11.2",
+    "html-loader": "^0.5.1",
+    "image-webpack-loader": "^3.3.1",
+    "node-sass": "^4.5.0",
+    "react-hot-loader": "^1.3.1",
+    "sass-loader": "^6.0.3",
+    "style-loader": "^0.13.2",
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1"
+  },
+  "dependencies": {
+    "classnames": "^2.2.5",
+    "lodash": "^4.17.4",
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "react-redux": "^5.0.6",
+    "redux": "3.7.2"
+  }
+}
