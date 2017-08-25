@@ -1,4 +1,4 @@
-# react-redux-todo-list
+# todo-list-react-redux
 A simple TODO list build using React and Redux libraries
 
 Redux is a predictable state container for JavaScript apps.
